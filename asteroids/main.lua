@@ -90,6 +90,10 @@ end
 
 local function changeSetting(direction)
     local option = settingsOptions[settingsSelection]
+    if (settingsPreviousState == "playing" or settingsPreviousState == "paused")
+        and (option.key == "mode" or option.key == "difficulty") then
+        return
+    end
     local currentIndex = 1
     for index, value in ipairs(option.values) do
         if value == settings[option.key] then
@@ -127,7 +131,7 @@ local function spawnWave()
         local x = love.math.random(0, width)
         local y = love.math.random(0, height)
 
-        while Collision.distance(x, y, player.x, player.y) < 160 do
+        while Collision.wrappedDistance(x, y, player.x, player.y, width, height) < 160 do
             x = love.math.random(0, width)
             y = love.math.random(0, height)
         end
@@ -162,6 +166,7 @@ local function restartGame()
     score = 0
     lives = 3
     wave = 1
+    spawnTimer = 0
     state = "playing"
     maxWaves = settings.mode == "endless" and 999 or 10
     timeRemaining = 60
@@ -238,9 +243,10 @@ local function triggerAsteroidExplosion(source, width, height)
     local radius = source.radius * 3
     for index = #asteroids, 1, -1 do
         local target = asteroids[index]
-        if target ~= source and Collision.distance(source.x, source.y, target.x, target.y) < radius then
+        if target ~= source and Collision.wrappedDistance(source.x, source.y, target.x, target.y, width, height) < radius then
             table.remove(asteroids, index)
             score = score + math.floor(target.points * progression.scoreMultiplier)
+            missionProgress = missionProgress + 1
             addExplosion(target.x, target.y, target.radius)
         end
     end
@@ -603,7 +609,7 @@ local function drawSettings()
     end
 
     love.graphics.setColor(0.55, 0.65, 0.8)
-    love.graphics.printf("UP/DOWN select   LEFT/RIGHT change   C controls   ESC back", panelX, panelY + panelHeight - 32, panelWidth, "center")
+    love.graphics.printf("UP/DOWN select   LEFT/RIGHT change   C controls   ESC back\nMode and difficulty are locked during a run", panelX, panelY + panelHeight - 32, panelWidth, "center")
     love.graphics.setColor(1, 1, 1)
 end
 

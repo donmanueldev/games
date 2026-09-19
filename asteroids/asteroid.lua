@@ -21,6 +21,7 @@ function Asteroid.new(x, y, size, speedMultiplier, variant, behavior)
         x = x, y = y, size = size, variant = variant, behavior = behavior or "normal",
         explosive = behavior == "explosive", chaser = behavior == "chaser",
         radius = data.radius, points = data.points,
+        maxSpeed = data.speed * speedMultiplier * 1.5,
         velocityX = math.cos(angle) * data.speed * speedMultiplier,
         velocityY = math.sin(angle) * data.speed * speedMultiplier,
         rotation = love.math.random() * math.pi * 2,
@@ -34,6 +35,11 @@ function Asteroid:update(dt, width, height, target)
         local angle = math.atan(target.y - self.y, target.x - self.x)
         self.velocityX = self.velocityX + math.cos(angle) * 18 * dt
         self.velocityY = self.velocityY + math.sin(angle) * 18 * dt
+        local speed = math.sqrt(self.velocityX * self.velocityX + self.velocityY * self.velocityY)
+        if speed > self.maxSpeed then
+            self.velocityX = self.velocityX / speed * self.maxSpeed
+            self.velocityY = self.velocityY / speed * self.maxSpeed
+        end
     end
     self.x = (self.x + self.velocityX * dt) % width
     self.y = (self.y + self.velocityY * dt) % height

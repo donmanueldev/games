@@ -35,7 +35,7 @@ function Powerup:draw()
     local pulse = 1 + math.sin(self.age * 5) * 0.08
     love.graphics.setColor(1, 1, 1)
     love.graphics.draw(self.image, self.x, self.y, 0, 0.45 * pulse, 0.45 * pulse,
-        self.image:getWidth() / 2, self.image:getHeight() / 2)
+            self.image:getWidth() / 2, self.image:getHeight() / 2)
     love.graphics.setColor(self.definition.color[1], self.definition.color[2], self.definition.color[3], 0.8)
     love.graphics.circle("line", self.x, self.y, self.radius + 4 + math.sin(self.age * 4) * 2)
     love.graphics.setColor(1, 1, 1)

@@ -91,7 +91,7 @@ end
 local function changeSetting(direction)
     local option = settingsOptions[settingsSelection]
     if (settingsPreviousState == "playing" or settingsPreviousState == "paused")
-        and (option.key == "mode" or option.key == "difficulty") then
+            and (option.key == "mode" or option.key == "difficulty") then
         return
     end
     local currentIndex = 1
@@ -104,7 +104,9 @@ local function changeSetting(direction)
     currentIndex = ((currentIndex - 1 + direction) % #option.values) + 1
     settings[option.key] = option.values[currentIndex]
     debugHitboxes = settings.hitboxes
-    if music then music:play(settings.music) end
+    if music then
+        music:play(settings.music)
+    end
 end
 
 local function screenSize()
@@ -123,8 +125,8 @@ local function spawnWave()
     setBackgroundForWave()
     local count = math.min(3 + wave, 12)
     local difficultyBase = settings.difficulty == "easy" and 0.82
-        or settings.difficulty == "hard" and 1.22
-        or 1
+            or settings.difficulty == "hard" and 1.22
+            or 1
     difficultyMultiplier = difficultyBase + math.min(wave - 1, 8) * 0.12
 
     for i = 1, count do
@@ -318,7 +320,9 @@ function love.keypressed(key)
             waitingForControlKey = true
         end
     elseif state == "tutorial" then
-        if key == "escape" or key == "return" or key == "space" then state = "menu" end
+        if key == "escape" or key == "return" or key == "space" then
+            state = "menu"
+        end
     elseif state == "name_entry" then
         if key == "backspace" then
             playerName = playerName:sub(1, -2)
@@ -327,7 +331,9 @@ function love.keypressed(key)
             state = "leaderboard"
         end
     elseif state == "leaderboard" then
-        if key == "return" or key == "space" then restartGame() end
+        if key == "return" or key == "space" then
+            restartGame()
+        end
     elseif state == "settings" then
         if key == "escape" then
             state = settingsPreviousState or "menu"
@@ -384,7 +390,10 @@ function love.update(dt)
     fireCooldown = math.max(0, fireCooldown - dt)
     if settings.mode == "time trial" then
         timeRemaining = math.max(0, timeRemaining - dt)
-        if timeRemaining <= 0 then finishGame("victory") return end
+        if timeRemaining <= 0 then
+            finishGame("victory")
+            return
+        end
     end
     local width, height = screenSize()
     player:update(dt, width, height, progression.thrust, controls)
@@ -413,7 +422,9 @@ function love.update(dt)
         end
     end
 
-    for _, orb in ipairs(scoreOrbs) do orb:update(dt) end
+    for _, orb in ipairs(scoreOrbs) do
+        orb:update(dt)
+    end
 
     if ufo then
         ufo:update(dt, width, height, player)
@@ -437,7 +448,9 @@ function love.update(dt)
                     table.remove(asteroids, asteroidIndex)
                     splitAsteroid(asteroid)
                     addExplosion(asteroid.x, asteroid.y, asteroid.radius)
-                    if asteroid.explosive then triggerAsteroidExplosion(asteroid, width, height) end
+                    if asteroid.explosive then
+                        triggerAsteroidExplosion(asteroid, width, height)
+                    end
                     playSound(sounds.explosion)
                     score = score + math.floor(asteroid.points * progression.scoreMultiplier)
                     missionProgress = missionProgress + 1
@@ -519,14 +532,18 @@ function love.update(dt)
         end
     end
 
-    if missionKind == "survive" then missionProgress = 60 - timeRemaining end
+    if missionKind == "survive" then
+        missionProgress = 60 - timeRemaining
+    end
 
     for asteroidIndex = #asteroids, 1, -1 do
         if player.invulnerableFor <= 0 and Collision.circlesCollide(player, asteroids[asteroidIndex], width, height) then
             local asteroid = asteroids[asteroidIndex]
             table.remove(asteroids, asteroidIndex)
             addExplosion(player.x, player.y, player.radius)
-            if asteroid.explosive then triggerAsteroidExplosion(asteroid, width, height) end
+            if asteroid.explosive then
+                triggerAsteroidExplosion(asteroid, width, height)
+            end
             playSound(sounds.lose)
             if progression:hasShield() then
                 progression.shieldFor = 0
@@ -613,6 +630,59 @@ local function drawSettings()
     love.graphics.setColor(1, 1, 1)
 end
 
+local function drawActivePowerups(width)
+    if state ~= "playing" and state ~= "paused" then
+        return
+    end
+
+    local entries = {}
+    local function add(label, value, color)
+        table.insert(entries, { label = label, value = value, color = color })
+    end
+
+    if progression:hasShield() then
+        add("SHIELD", string.format("%ds", math.ceil(progression.shieldFor)), { 0.3, 0.8, 1 })
+    end
+    if progression.rapidFireFor > 0 then
+        add("RAPID FIRE", string.format("%ds", math.ceil(progression.rapidFireFor)), { 1, 0.8, 0.2 })
+    end
+    if progression.magnetFor > 0 then
+        add("MAGNET", string.format("%ds", math.ceil(progression.magnetFor)), { 0.7, 0.35, 1 })
+    end
+    if progression.shotCount > 1 then
+        add("DOUBLE SHOT", "READY", { 0.5, 1, 0.4 })
+    end
+    if progression.thrust > 220 then
+        add("ENGINE", string.format("+%d", progression.thrust - 220), { 1, 0.4, 0.3 })
+    end
+    if progression.scoreMultiplier > 1 then
+        add("SCORE", string.format("x%.1f", progression.scoreMultiplier), { 1, 0.55, 0.2 })
+    end
+
+    if #entries == 0 then
+        return
+    end
+
+    local panelWidth = 190
+    local panelHeight = 28 + #entries * 22
+    local panelX = width - panelWidth - 16
+    local panelY = 16
+    love.graphics.setColor(0.02, 0.04, 0.1, 0.78)
+    love.graphics.rectangle("fill", panelX, panelY, panelWidth, panelHeight, 6, 6)
+    love.graphics.setColor(0.3, 0.65, 1, 0.7)
+    love.graphics.rectangle("line", panelX, panelY, panelWidth, panelHeight, 6, 6)
+    love.graphics.setColor(0.7, 0.85, 1)
+    love.graphics.print("ACTIVE SYSTEMS", panelX + 12, panelY + 7)
+
+    for index, entry in ipairs(entries) do
+        local rowY = panelY + 28 + (index - 1) * 22
+        love.graphics.setColor(entry.color[1], entry.color[2], entry.color[3])
+        love.graphics.print(entry.label, panelX + 12, rowY)
+        love.graphics.printf(entry.value, panelX + 106, rowY, 70, "right")
+    end
+    love.graphics.setColor(1, 1, 1)
+end
+
 function love.draw()
     local width, height = screenSize()
     love.graphics.setColor(1, 1, 1)
@@ -620,14 +690,14 @@ function love.draw()
 
     if state == "menu" or state == "settings" then
         love.graphics.draw(
-            logo,
-            width / 2,
-            height / 2 - 92,
-            0,
-            0.15,
-            0.15,
-            logo:getWidth() / 2,
-            logo:getHeight() / 2
+                logo,
+                width / 2,
+                height / 2 - 92,
+                0,
+                0.15,
+                0.15,
+                logo:getWidth() / 2,
+                logo:getHeight() / 2
         )
     else
         player:draw()
@@ -644,8 +714,12 @@ function love.draw()
     for _, powerup in ipairs(powerups) do
         powerup:draw()
     end
-    for _, orb in ipairs(scoreOrbs) do orb:draw() end
-    if ufo then ufo:draw() end
+    for _, orb in ipairs(scoreOrbs) do
+        orb:draw()
+    end
+    if ufo then
+        ufo:draw()
+    end
     Particles.draw(particles)
 
     for _, explosion in ipairs(explosions) do
@@ -657,8 +731,12 @@ function love.draw()
     if debugHitboxes and state ~= "settings" then
         love.graphics.setColor(0.2, 1, 0.3, 0.8)
         Collision.drawCircle(player)
-        for _, asteroid in ipairs(asteroids) do Collision.drawCircle(asteroid) end
-        for _, bullet in ipairs(bullets) do Collision.drawCircle(bullet) end
+        for _, asteroid in ipairs(asteroids) do
+            Collision.drawCircle(asteroid)
+        end
+        for _, bullet in ipairs(bullets) do
+            Collision.drawCircle(bullet)
+        end
     end
 
     if progression:hasShield() and state == "playing" then
@@ -679,11 +757,12 @@ function love.draw()
     if state == "playing" then
         love.graphics.setColor(0.7, 0.85, 1)
         local missionText = missionKind == "survive"
-            and string.format("Mission: survive %ds/%ds", math.floor(missionProgress), missionTarget)
-            or string.format("Mission: destroy asteroids %d/%d", math.min(missionProgress, missionTarget), missionTarget)
+                and string.format("Mission: survive %ds/%ds", math.floor(missionProgress), missionTarget)
+                or string.format("Mission: destroy asteroids %d/%d", math.min(missionProgress, missionTarget), missionTarget)
         love.graphics.print(missionText, 16, 36)
         love.graphics.setColor(1, 1, 1)
     end
+    drawActivePowerups(width)
     if state == "playing" and wave < 999 then
         love.graphics.setColor(0.2, 0.7, 1, 0.8)
         love.graphics.rectangle("fill", 16, 55, 180 * (#asteroids > 0 and (1 - math.min(#asteroids / math.max(3 + wave, 1), 1)) or 1), 4)
